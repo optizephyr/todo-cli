@@ -1,12 +1,17 @@
-package main
+package services
 
 import (
 	"fmt"
+
 	"github.com/optizephyr/todo-cli/models"
 	"github.com/optizephyr/todo-cli/storage"
 )
 
 func AddTask(description string) {
+	tasks, err := storage.LoadTasks()
+	if err != nil {
+		fmt.Println(err)
+	}
 	maxID := 0
 	for _, task := range tasks {
 		if maxID < task.ID {
@@ -25,6 +30,11 @@ func AddTask(description string) {
 }
 
 func ListTasks() {
+	tasks, err := storage.LoadTasks()
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	if len(tasks) == 0 {
 		fmt.Println("No tasks found.")
 		return
@@ -34,23 +44,32 @@ func ListTasks() {
 	}
 }
 func DoneTask(id int) {
+	tasks, err := storage.LoadTasks()
+	if err != nil {
+		fmt.Println(err)
+	}
 	for i, task := range tasks {
 		if task.ID == id {
 			tasks[i].Done = true
+			fmt.Printf("task %d have done\n", id)
+			storage.SaveTasks(tasks)
 			return
 		}
 	}
-	storage.SaveTasks(tasks)
 	fmt.Printf("task %d not found\n", id)
 }
 
 func RemoveTask(id int) {
+	tasks, err := storage.LoadTasks()
+	if err != nil {
+		fmt.Println(err)
+	}
 	for i, task := range tasks {
 		if task.ID == id {
 			tasks = append(tasks[:i], tasks[i+1:]...)
+			storage.SaveTasks(tasks)
 			return
 		}
 	}
-	storage.SaveTasks(tasks)
 	fmt.Printf("task %d not found\n", id)
 }
