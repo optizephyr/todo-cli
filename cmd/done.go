@@ -18,11 +18,15 @@ var doneCmd = &cobra.Command{
 	Long:  ``,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		id, err := strconv.Atoi(args[0])
-		if err != nil {
-			fmt.Println("Please input a id(number)")
+		var ids []int
+		for _, arg := range args {
+			id, err := strconv.Atoi(arg)
+			if err != nil {
+				panic(fmt.Sprintf("%v转换失败", arg))
+			}
+			ids = append(ids, id)
 		}
-		services.DoneTask(id)
+		services.DoneTasks(ids)
 	},
 }
 

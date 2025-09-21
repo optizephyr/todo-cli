@@ -8,10 +8,27 @@ import (
 	"github.com/optizephyr/todo-cli/storage"
 )
 
+var tasks []models.Task
+var loaded bool = false
+
+func loadTasksOnce() error {
+	if !loaded {
+		var err error
+		tasks, err = storage.LoadTasks()
+		if err != nil {
+			return err
+		}
+		loaded = true
+	}
+	return nil
+}
+func saveTasks() error {
+	return storage.SaveTasks(tasks)
+}
 func AddTask(description string) {
-	tasks, err := storage.LoadTasks()
-	if err != nil {
+	if err := loadTasksOnce(); err != nil {
 		fmt.Println(err)
+		return
 	}
 	maxID := 0
 	for _, task := range tasks {
@@ -27,16 +44,17 @@ func AddTask(description string) {
 	}
 
 	tasks = append(tasks, task)
-	storage.SaveTasks(tasks)
 	fmt.Printf("Added task %d: %s\n", task.ID, task.Description)
+	if err := saveTasks(); err != nil {
+		fmt.Println(err)
+	}
 }
 
 func ListAllTasks() {
-	tasks, err := storage.LoadTasks()
-	if err != nil {
+	if err := loadTasksOnce(); err != nil {
 		fmt.Println(err)
+		return
 	}
-
 	if len(tasks) == 0 {
 		fmt.Println("No tasks found.")
 		return
@@ -45,42 +63,50 @@ func ListAllTasks() {
 		fmt.Printf("%d. [%v] %s created at %v\n", task.ID, task.Done, task.Description, task.CreatedAt)
 	}
 }
-func DoneTask(id int) {
-	tasks, err := storage.LoadTasks()
-	if err != nil {
+func DoneTasks(ids []int) {
+	if err := loadTasksOnce(); err != nil {
 		fmt.Println(err)
+		return
 	}
-	for i, task := range tasks {
-		if task.ID == id {
-			tasks[i].Done = true
-			fmt.Printf("task %d have done\n", id)
-			storage.SaveTasks(tasks)
-			return
+	for _, id := range ids {
+		for i, task := range tasks {
+			if task.ID == id {
+				tasks[i].Done = true
+				fmt.Printf("task %d have done\n", id)
+				if err := saveTasks(); err != nil {
+					fmt.Println(err)
+				}
+				return
+			}
 		}
+		fmt.Printf("task %d not found\n", id)
 	}
-	fmt.Printf("task %d not found\n", id)
 }
 
-func RemoveTask(id int) {
-	tasks, err := storage.LoadTasks()
-	if err != nil {
+func RemoveTasks(ids []int) {
+	if err := loadTasksOnce(); err != nil {
 		fmt.Println(err)
+		return
 	}
-	for i, task := range tasks {
-		if task.ID == id {
-			tasks = append(tasks[:i], tasks[i+1:]...)
-			storage.SaveTasks(tasks)
-			fmt.Printf("task %d is removed\n", id)
-			return
+	for _, id := range ids {
+		for i, task := range tasks {
+			if task.ID == id {
+				tasks = append(tasks[:i], tasks[i+1:]...)
+				fmt.Printf("task %d is removed\n", id)
+				if err := saveTasks(); err != nil {
+					fmt.Println(err)
+				}
+				return
+			}
 		}
+		fmt.Printf("task %d not found\n", id)
 	}
-	fmt.Printf("task %d not found\n", id)
 }
 
 func CleanTasks() {
-	tasks, err := storage.LoadTasks()
-	if err != nil {
+	if err := loadTasksOnce(); err != nil {
 		fmt.Println(err)
+		return
 	}
 	res := []models.Task{}
 	del := []models.Task{}
@@ -91,6 +117,7 @@ func CleanTasks() {
 			res = append(res, task)
 		}
 	}
+	tasks = res
 	if len(del) == 0 {
 		fmt.Println("Nothing to do")
 		return
@@ -99,49 +126,34 @@ func CleanTasks() {
 	for _, task := range del {
 		fmt.Printf("%d. %s created at %v\n", task.ID, task.Description, task.CreatedAt)
 	}
-	storage.SaveTasks(res)
+	if err := saveTasks(); err != nil {
+		fmt.Println(err)
+	}
 }
 
 func EditTasks(id int, modified string) {
-	tasks, err := storage.LoadTasks()
-	if err != nil {
+	if err := loadTasksOnce(); err != nil {
 		fmt.Println(err)
+		return
 	}
 	for i, task := range tasks {
 		if task.ID == id {
 			tasks[i].Description = modified
 			fmt.Printf("task %d become %s\n", id, modified)
-			storage.SaveTasks(tasks)
+			if err := saveTasks(); err != nil {
+				fmt.Println(err)
+			}
 			return
 		}
 	}
 	fmt.Printf("task %d not found\n", id)
 }
 
-func ListTasksWithExp(done bool) {
-	tasks, err := storage.LoadTasks()
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	flag := true
-	for _, task := range tasks {
-		if task.Done == done {
-			fmt.Printf("%d. [%v] %s created at %v\n", task.ID, task.Done, task.Description, task.CreatedAt)
-			flag = false
-		}
-	}
-	if flag {
-		fmt.Println("No tasks found.")
-	}
-}
-
 func ListDoneTasks() {
-	tasks, err := storage.LoadTasks()
-	if err != nil {
+	if err := loadTasksOnce(); err != nil {
 		fmt.Println(err)
+		return
 	}
-
 	flag := true
 	for _, task := range tasks {
 		if task.Done {
@@ -154,11 +166,10 @@ func ListDoneTasks() {
 	}
 }
 func ListPendingTasks() {
-	tasks, err := storage.LoadTasks()
-	if err != nil {
+	if err := loadTasksOnce(); err != nil {
 		fmt.Println(err)
+		return
 	}
-
 	flag := true
 	for _, task := range tasks {
 		if !task.Done {
