@@ -16,7 +16,6 @@ var removeCmd = &cobra.Command{
 	Short:   "remove the todo item",
 	Aliases: []string{"rm"},
 	Long:    ``,
-	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var ids []int
 		for _, arg := range args {

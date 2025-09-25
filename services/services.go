@@ -76,10 +76,8 @@ func DoneTasks(ids []int) {
 				if err := saveTasks(); err != nil {
 					fmt.Println(err)
 				}
-				return
 			}
 		}
-		fmt.Printf("task %d not found\n", id)
 	}
 }
 
@@ -96,10 +94,8 @@ func RemoveTasks(ids []int) {
 				if err := saveTasks(); err != nil {
 					fmt.Println(err)
 				}
-				return
 			}
 		}
-		fmt.Printf("task %d not found\n", id)
 	}
 }
 
@@ -179,5 +175,22 @@ func ListPendingTasks() {
 	}
 	if flag {
 		fmt.Println("No tasks found.")
+	}
+}
+func UndoTasks(ids []int) {
+	if err := loadTasksOnce(); err != nil {
+		fmt.Println(err)
+		return
+	}
+	for _, id := range ids {
+		for i, task := range tasks {
+			if task.ID == id {
+				tasks[i].Done = false
+				fmt.Printf("task %d have done\n", id)
+				if err := saveTasks(); err != nil {
+					fmt.Println(err)
+				}
+			}
+		}
 	}
 }

@@ -11,10 +11,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// doneCmd represents the done command
-var doneCmd = &cobra.Command{
-	Use:   "done",
-	Short: "set the todo item to done",
+// undoCmd represents the undo command
+var undoCmd = &cobra.Command{
+	Use:   "undo",
+	Short: "Undo a todo task",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		var ids []int
@@ -25,20 +25,20 @@ var doneCmd = &cobra.Command{
 			}
 			ids = append(ids, id)
 		}
-		services.DoneTasks(ids)
+		services.UndoTasks(ids)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(doneCmd)
+	rootCmd.AddCommand(undoCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// doneCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// undoCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// doneCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// undoCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

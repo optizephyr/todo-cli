@@ -19,23 +19,21 @@ var listCmd = &cobra.Command{
 			services.ListAllTasks()
 		} else if showDone {
 			services.ListDoneTasks()
-		} else if showPending {
+		} else {
 			services.ListPendingTasks()
 		}
 	},
 }
 
 var (
-	showDone    bool
-	showPending bool
-	showAll     bool
+	showDone bool
+	showAll  bool
 )
 
 func init() {
 	rootCmd.AddCommand(listCmd)
 	listCmd.Flags().BoolVarP(&showDone, "done", "d", false, "show only done tasks")
-	listCmd.Flags().BoolVarP(&showPending, "pending", "p", false, "show only pending tasks")
 	listCmd.Flags().BoolVarP(&showAll, "all", "a", false, "show only all tasks")
 
-	listCmd.MarkFlagsMutuallyExclusive("done", "pending", "all")
+	listCmd.MarkFlagsMutuallyExclusive("done", "all")
 }
