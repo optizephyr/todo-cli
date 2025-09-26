@@ -4,6 +4,8 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/optizephyr/todo-cli/services"
 	"github.com/spf13/cobra"
 )
@@ -15,7 +17,15 @@ var cleanCmd = &cobra.Command{
 	Long:  ``,
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		services.CleanTasks()
+		tasks, err := services.CleanTasks()
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println("成功清理以下任务：")
+			for _, task := range tasks {
+				fmt.Printf("任务%d:%s 完成状态:%v 创建于:%s\n", task.ID, task.Description, task.Done, task.CreatedAt.Format("2006-01-02 15:04:05"))
+			}
+		}
 	},
 }
 

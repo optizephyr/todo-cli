@@ -25,7 +25,16 @@ var undoCmd = &cobra.Command{
 			}
 			ids = append(ids, id)
 		}
-		services.UndoTasks(ids)
+		tasks, err := services.UndoTasks(ids)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println("Undo以下任务:")
+			for _, task := range tasks {
+				fmt.Printf("任务%d:%s 完成状态:%v 创建于:%s\n", task.ID, task.Description, task.Done, task.CreatedAt.Format("2006-01-02 15:04:05"))
+			}
+		}
+
 	},
 }
 

@@ -5,9 +5,10 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/optizephyr/todo-cli/services"
 	"github.com/spf13/cobra"
-	"strconv"
 )
 
 // removeCmd represents the remove command
@@ -25,7 +26,15 @@ var removeCmd = &cobra.Command{
 			}
 			ids = append(ids, id)
 		}
-		services.RemoveTasks(ids)
+		tasks, err := services.RemoveTasks(ids)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println("删除以下任务:")
+			for _, task := range tasks {
+				fmt.Printf("任务%d:%s 完成状态:%v 创建于:%s\n", task.ID, task.Description, task.Done, task.CreatedAt.Format("2006-01-02 15:04:05"))
+			}
+		}
 	},
 }
 

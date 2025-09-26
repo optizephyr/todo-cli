@@ -7,7 +7,9 @@ import (
 	"os"
 )
 
-func LoadTasks() ([]models.Task, error) {
+type FileStorage struct{}
+
+func (fs FileStorage) LoadTasks() ([]models.Task, error) {
 	jsonData, err := os.ReadFile(".todos.json")
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -31,7 +33,7 @@ func LoadTasks() ([]models.Task, error) {
 	return tasks, nil
 }
 
-func SaveTasks(tasks []models.Task) error {
+func (fs FileStorage) SaveTasks(tasks []models.Task) error {
 
 	jsonData, err := json.Marshal(tasks)
 	if err != nil {

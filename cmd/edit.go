@@ -19,9 +19,12 @@ var editCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		id, err := strconv.Atoi(args[0])
 		if err != nil {
-			fmt.Println("Please input a id(number)")
+			panic(fmt.Sprintf("输入%s，输入数字", args[0]))
 		}
-		services.EditTasks(id, args[1])
+		task, err := services.EditTasks(id, args[1])
+		if err != nil {
+			fmt.Printf("任务%d:%s 完成状态:%v 创建于:%s\n", task.ID, task.Description, task.Done, task.CreatedAt.Format("2006-01-02 15:04:05"))
+		}
 	},
 }
 

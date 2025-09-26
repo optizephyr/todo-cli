@@ -21,11 +21,19 @@ var doneCmd = &cobra.Command{
 		for _, arg := range args {
 			id, err := strconv.Atoi(arg)
 			if err != nil {
-				panic(fmt.Sprintf("%v转换失败", arg))
+				panic(fmt.Sprintf("输入%s，需要数字", arg))
 			}
 			ids = append(ids, id)
 		}
-		services.DoneTasks(ids)
+		tasks, err := services.DoneTasks(ids)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println("完成以下任务:")
+			for _, task := range tasks {
+				fmt.Printf("任务%d:%s 完成状态:%v 创建于:%s\n", task.ID, task.Description, task.Done, task.CreatedAt.Format("2006-01-02 15:04:05"))
+			}
+		}
 	},
 }
 

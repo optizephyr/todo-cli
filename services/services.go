@@ -1,20 +1,29 @@
 package services
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/optizephyr/todo-cli/models"
 	"github.com/optizephyr/todo-cli/storage"
 )
 
+type Storage interface {
+	LoadTasks() ([]models.Task, error)
+	SaveTasks([]models.Task) error
+}
+
 var tasks []models.Task
+var store Storage = storage.FileStorage{}
 var loaded bool = false
 
+func SetStorage(s Storage) {
+	store = s
+	loaded = false
+}
 func loadTasksOnce() error {
 	if !loaded {
 		var err error
-		tasks, err = storage.LoadTasks()
+		tasks, err = store.LoadTasks()
 		if err != nil {
 			return err
 		}
@@ -23,12 +32,11 @@ func loadTasksOnce() error {
 	return nil
 }
 func saveTasks() error {
-	return storage.SaveTasks(tasks)
+	return store.SaveTasks(tasks)
 }
-func AddTask(description string) {
+func AddTask(description string) (*models.Task, error) {
 	if err := loadTasksOnce(); err != nil {
-		fmt.Println(err)
-		return
+		return nil, err
 	}
 	maxID := 0
 	for _, task := range tasks {
@@ -44,65 +52,60 @@ func AddTask(description string) {
 	}
 
 	tasks = append(tasks, task)
-	fmt.Printf("Added task %d: %s\n", task.ID, task.Description)
 	if err := saveTasks(); err != nil {
-		fmt.Println(err)
+		return &task, err
 	}
+	return &task, nil
 }
 
-func ListAllTasks() {
+func GetAllTasks() ([]models.Task, error) {
 	if err := loadTasksOnce(); err != nil {
-		fmt.Println(err)
-		return
+		return []models.Task{}, err
 	}
-	if len(tasks) == 0 {
-		fmt.Println("No tasks found.")
-		return
-	}
-	for _, task := range tasks {
-		fmt.Printf("%d. [%v] %s created at %v\n", task.ID, task.Done, task.Description, task.CreatedAt)
-	}
+	return tasks, nil
 }
-func DoneTasks(ids []int) {
+func DoneTasks(ids []int) ([]models.Task, error) {
 	if err := loadTasksOnce(); err != nil {
-		fmt.Println(err)
-		return
+		return nil, err
 	}
+	updated := []models.Task{}
 	for _, id := range ids {
 		for i, task := range tasks {
 			if task.ID == id {
 				tasks[i].Done = true
-				fmt.Printf("task %d have done\n", id)
-				if err := saveTasks(); err != nil {
-					fmt.Println(err)
-				}
+				updated = append(updated, task)
 			}
 		}
 	}
+	if err := saveTasks(); err != nil {
+		return updated, err
+	}
+	return updated, nil
 }
 
-func RemoveTasks(ids []int) {
+func RemoveTasks(ids []int) ([]models.Task, error) {
 	if err := loadTasksOnce(); err != nil {
-		fmt.Println(err)
-		return
+		return nil, err
 	}
+	removed := []models.Task{}
 	for _, id := range ids {
 		for i, task := range tasks {
 			if task.ID == id {
 				tasks = append(tasks[:i], tasks[i+1:]...)
-				fmt.Printf("task %d is removed\n", id)
-				if err := saveTasks(); err != nil {
-					fmt.Println(err)
-				}
+				removed = append(removed, task)
+				break
 			}
 		}
 	}
+	if err := saveTasks(); err != nil {
+		return removed, err
+	}
+	return removed, nil
 }
 
-func CleanTasks() {
+func CleanTasks() ([]models.Task, error) {
 	if err := loadTasksOnce(); err != nil {
-		fmt.Println(err)
-		return
+		return []models.Task{}, err
 	}
 	res := []models.Task{}
 	del := []models.Task{}
@@ -114,83 +117,67 @@ func CleanTasks() {
 		}
 	}
 	tasks = res
-	if len(del) == 0 {
-		fmt.Println("Nothing to do")
-		return
-	}
-	fmt.Println("Clean the below tasks:")
-	for _, task := range del {
-		fmt.Printf("%d. %s created at %v\n", task.ID, task.Description, task.CreatedAt)
-	}
 	if err := saveTasks(); err != nil {
-		fmt.Println(err)
+		return del, err
 	}
+	return del, nil
+
 }
 
-func EditTasks(id int, modified string) {
+func EditTasks(id int, modified string) (*models.Task, error) {
 	if err := loadTasksOnce(); err != nil {
-		fmt.Println(err)
-		return
+		return nil, err
 	}
 	for i, task := range tasks {
 		if task.ID == id {
 			tasks[i].Description = modified
-			fmt.Printf("task %d become %s\n", id, modified)
 			if err := saveTasks(); err != nil {
-				fmt.Println(err)
+				return &tasks[i], err
 			}
-			return
 		}
 	}
-	fmt.Printf("task %d not found\n", id)
+	return nil, nil
 }
 
-func ListDoneTasks() {
+func GetDoneTasks() ([]models.Task, error) {
 	if err := loadTasksOnce(); err != nil {
-		fmt.Println(err)
-		return
+		return []models.Task{}, err
 	}
-	flag := true
+	res := []models.Task{}
 	for _, task := range tasks {
 		if task.Done {
-			fmt.Printf("%d. [%v] %s created at %v\n", task.ID, task.Done, task.Description, task.CreatedAt)
-			flag = false
+			res = append(res, task)
 		}
 	}
-	if flag {
-		fmt.Println("No tasks found.")
-	}
+	return res, nil
 }
-func ListPendingTasks() {
+func GetPendingTasks() ([]models.Task, error) {
 	if err := loadTasksOnce(); err != nil {
-		fmt.Println(err)
-		return
+		return []models.Task{}, err
 	}
-	flag := true
+	res := []models.Task{}
 	for _, task := range tasks {
 		if !task.Done {
-			fmt.Printf("%d. [%v] %s created at %v\n", task.ID, task.Done, task.Description, task.CreatedAt)
-			flag = false
+			res = append(res, task)
 		}
 	}
-	if flag {
-		fmt.Println("No tasks found.")
-	}
+	return res, nil
 }
-func UndoTasks(ids []int) {
+func UndoTasks(ids []int) ([]models.Task, error) {
 	if err := loadTasksOnce(); err != nil {
-		fmt.Println(err)
-		return
+		return []models.Task{}, err
 	}
+	res := []models.Task{}
 	for _, id := range ids {
 		for i, task := range tasks {
 			if task.ID == id {
 				tasks[i].Done = false
-				fmt.Printf("task %d have done\n", id)
-				if err := saveTasks(); err != nil {
-					fmt.Println(err)
-				}
+				res = append(res, task)
 			}
 		}
 	}
+	if err := saveTasks(); err != nil {
+		return res, err
+	}
+	return res, nil
 }
